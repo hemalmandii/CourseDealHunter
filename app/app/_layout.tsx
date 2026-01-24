@@ -7,8 +7,8 @@ import { View, ActivityIndicator } from 'react-native';
 import { initializeOneSignal, setOneSignalExternalUserId } from '../src/services/notifications';
 import { getDeviceId } from '../src/utils/storage';
 
-// Initialize OneSignal on app start
-initializeOneSignal();
+// Initialize OneSignal on app start - Temporarily disabled for build troubleshooting
+// initializeOneSignal();
 
 
 function RootLayoutNav() {
@@ -22,9 +22,9 @@ function RootLayoutNav() {
         AsyncStorage.getItem('hasSeenWalkthrough').then(async (value) => {
             console.log('[Layout] AsyncStorage hasSeenWalkthrough:', value);
 
-            // Set up OneSignal external user ID for targeting
+            // Set up OneSignal external user ID for targeting - Temporarily disabled
             const deviceId = await getDeviceId();
-            setOneSignalExternalUserId(deviceId);
+            // setOneSignalExternalUserId(deviceId);
 
             if (value !== 'true') {
                 console.log('[Layout] Redirecting to /walkthrough');

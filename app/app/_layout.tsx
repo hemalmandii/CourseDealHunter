@@ -4,6 +4,12 @@ import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 import { View, ActivityIndicator } from 'react-native';
+import { initializeOneSignal, setOneSignalExternalUserId } from '../src/services/notifications';
+import { getDeviceId } from '../src/utils/storage';
+
+// Initialize OneSignal on app start
+initializeOneSignal();
+
 
 function RootLayoutNav() {
     const { isDark, colors } = useTheme();
@@ -12,9 +18,14 @@ function RootLayoutNav() {
 
     useEffect(() => {
         console.log('[Layout] Mounting RootLayoutNav');
-        // Check onboarding status
-        AsyncStorage.getItem('hasSeenWalkthrough').then((value) => {
+        // Check onboarding status and set up OneSignal user ID
+        AsyncStorage.getItem('hasSeenWalkthrough').then(async (value) => {
             console.log('[Layout] AsyncStorage hasSeenWalkthrough:', value);
+
+            // Set up OneSignal external user ID for targeting
+            const deviceId = await getDeviceId();
+            setOneSignalExternalUserId(deviceId);
+
             if (value !== 'true') {
                 console.log('[Layout] Redirecting to /walkthrough');
                 setTimeout(() => {

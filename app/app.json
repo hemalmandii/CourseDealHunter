@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "Course Deal Hunter",
+    "slug": "course-deal-hunter",
     "scheme": "coursedealhunter",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,21 +14,38 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.coursedealhunter.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.coursedealhunter.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
-      "expo-web-browser"
-    ]
+      "expo-web-browser",
+      [
+        "onesignal-expo-plugin",
+        {
+          "mode": "development",
+          "devTeam": "YOUR_APPLE_TEAM_ID"
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b5880f63-8357-4d39-8ad9-4f6f48d9e5d8"
+      },
+      "oneSignalAppId": "YOUR_ONESIGNAL_APP_ID"
+    },
+    "owner": "hemalmandi"
   }
 }

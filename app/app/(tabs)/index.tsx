@@ -74,7 +74,7 @@ export default function FeedScreen() {
     return (
         <View style={styles.container}>
             <CustomHeader
-                title="Course Deal Hunter"
+                title="SkillLoot"
                 rightAction={
                     <TouchableOpacity onPress={() => router.push('/(tabs)/explore')}>
                         <Ionicons name="search" size={24} color="#111" />

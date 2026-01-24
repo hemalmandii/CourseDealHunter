@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Course Deal Hunter",
-    "slug": "course-deal-hunter",
+    "name": "SkillLoot",
+    "slug": "skillloot",
     "scheme": "coursedealhunter",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -44,7 +44,7 @@
       "eas": {
         "projectId": "b5880f63-8357-4d39-8ad9-4f6f48d9e5d8"
       },
-      "oneSignalAppId": "YOUR_ONESIGNAL_APP_ID"
+      "oneSignalAppId": "55df49d7-440f-4388-8a46-5f16336358bb"
     },
     "owner": "hemalmandi"
   }

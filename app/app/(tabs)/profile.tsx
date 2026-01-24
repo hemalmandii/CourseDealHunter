@@ -67,7 +67,7 @@ export default function ProfileScreen() {
                 {/* Settings / Info */}
                 <View style={styles.infoCard}>
                     <Text style={styles.infoTitle}>About</Text>
-                    <Text style={styles.infoText}>Course Deal Hunter aggregates free coupons from around the web. Vote to keep the community updated!</Text>
+                    <Text style={styles.infoText}>SkillLoot finds free Udemy courses from around the web. Vote to keep the community updated!</Text>
                     <Text style={[styles.infoText, { marginTop: 16, fontWeight: 'bold' }]}>v1.2.0 (AAA Edition)</Text>
                 </View>
 

@@ -16,6 +16,7 @@ Deno.serve(async (req) => {
 
         const url = new URL(req.url);
         const id = url.searchParams.get('id');
+        const deviceId = url.searchParams.get('deviceId');
 
         if (!id) {
             return new Response(JSON.stringify({ error: 'Missing id' }), {
@@ -31,6 +32,18 @@ Deno.serve(async (req) => {
             .single();
 
         if (error) throw error;
+
+        // Get saved status
+        let isSaved = false;
+        if (deviceId) {
+            const { data: save } = await supabase
+                .from('deal_saves')
+                .select('id')
+                .eq('deal_id', id)
+                .eq('device_id', deviceId)
+                .maybeSingle();
+            if (save) isSaved = true;
+        }
 
         // Get stats
         const { data: stats } = await supabase
@@ -52,7 +65,7 @@ Deno.serve(async (req) => {
             badge = 'Likely Expired';
         }
 
-        return new Response(JSON.stringify({ ...deal, stats, badge }), {
+        return new Response(JSON.stringify({ ...deal, stats, badge, is_saved: isSaved }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
 

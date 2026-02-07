@@ -12,7 +12,8 @@ jobs:
     steps:
       - name: Trigger Course Scraper
         run: |
-          response=$(curl -s -w "\n%{http_code}" -X POST \
+          echo "Starting Scraper..."
+          response=$(curl -s -f -w "\n%{http_code}" -X POST \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
             -H "Content-Type: application/json" \
             https://edzquzoglijjxlslbyll.supabase.co/functions/v1/scrape-coursesity)
@@ -20,18 +21,14 @@ jobs:
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n-1)
           
-          echo "Response: $body"
-          echo "HTTP Status: $http_code"
-          
-          if [ "$http_code" != "200" ]; then
-            echo "Error: Scraper returned non-200 status"
-            exit 1
-          fi
+          echo "Scraper Status: $http_code"
+          echo "Scraper Result: $body"
 
       - name: Resolve Course Details
         run: |
+          echo "Starting Resolver..."
           sleep 5  # Wait for scraper to finish inserting
-          response=$(curl -s -w "\n%{http_code}" -X POST \
+          response=$(curl -s -f -w "\n%{http_code}" -X POST \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
             -H "Content-Type: application/json" \
             https://edzquzoglijjxlslbyll.supabase.co/functions/v1/resolve-details)
@@ -39,5 +36,5 @@ jobs:
           http_code=$(echo "$response" | tail -n1)
           body=$(echo "$response" | head -n-1)
           
-          echo "Response: $body"
-          echo "HTTP Status: $http_code"
+          echo "Resolver Status: $http_code"
+          echo "Resolver Result: $body"

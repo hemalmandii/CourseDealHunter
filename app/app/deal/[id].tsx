@@ -2,17 +2,32 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { fetchDeal, submitVote } from '../../src/services/api';
+import { fetchDeal, submitVote, toggleSaveDeal } from '../../src/services/api';
 import { getDeviceId } from '../../src/utils/storage';
 import { Badge } from '../../src/components/Badge';
 import { VoteBottomSheet } from '../../src/components/VoteBottomSheet';
 import { CustomHeader } from '../../src/components/CustomHeader';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const FALLBACK_IMAGES = [
+    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop', // Tech
+    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=800&auto=format&fit=crop', // Code
+    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800&auto=format&fit=crop', // Business
+    'https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=800&auto=format&fit=crop', // Design
+];
+
+const getFallbackImage = (title: string) => {
+    const hash = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return FALLBACK_IMAGES[hash % FALLBACK_IMAGES.length];
+};
 
 export default function DealDetailScreen() {
     const { id } = useLocalSearchParams();
     const [deal, setDeal] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [votingVisible, setVotingVisible] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -22,9 +37,32 @@ export default function DealDetailScreen() {
 
     const loadDeal = async () => {
         setLoading(true);
-        const data = await fetchDeal(id as string);
-        setDeal(data);
-        setLoading(false);
+        try {
+            const deviceId = await getDeviceId();
+            const data = await fetchDeal(id as string, deviceId);
+            setDeal(data);
+            if (data?.is_saved !== undefined) {
+                setIsSaved(data.is_saved);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleToggleSave = async () => {
+        if (!deal) return;
+        const newState = !isSaved;
+        setIsSaved(newState);
+
+        try {
+            const deviceId = await getDeviceId();
+            await toggleSaveDeal(deal.id, deviceId);
+        } catch (e) {
+            console.error('Failed to toggle save', e);
+            setIsSaved(!newState);
+        }
     };
 
     const handleOpenUdemy = async () => {
@@ -84,27 +122,51 @@ export default function DealDetailScreen() {
 
     return (
         <View style={styles.container}>
-            <CustomHeader title="Deal Details" showBack />
+            <CustomHeader
+                title="Deal Details"
+                showBack
+                rightAction={
+                    <TouchableOpacity onPress={handleToggleSave} style={{ padding: 4 }}>
+                        <Ionicons
+                            name={isSaved ? "heart" : "heart-outline"}
+                            size={26}
+                            color={isSaved ? "#E11D48" : "#111"}
+                        />
+                    </TouchableOpacity>
+                }
+            />
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                <Image
-                    source={{ uri: deal.thumbnail_url || 'https://via.placeholder.com/300' }}
-                    style={styles.image}
-                />
+                <View style={styles.imageContainer}>
+                    <Image
+                        source={{ uri: deal.thumbnail_url?.includes('placeholder') ? getFallbackImage(deal.title) : (deal.thumbnail_url || getFallbackImage(deal.title)) }}
+                        style={styles.image}
+                        defaultSource={{ uri: getFallbackImage(deal.title) }}
+                    />
+                    <LinearGradient
+                        colors={['transparent', 'rgba(0,0,0,0.6)']}
+                        style={StyleSheet.absoluteFill}
+                    />
+                </View>
                 <View style={styles.content}>
                     <Text style={styles.title}>{deal.title}</Text>
 
                     <View style={styles.statsRow}>
                         <View style={styles.stat}>
+                            <Ionicons name="star" size={16} color="#B45309" style={{ marginBottom: 4 }} />
                             <Text style={styles.statLabel}>Rating</Text>
-                            <Text style={styles.statValue}>★ {deal.rating_value?.toFixed(1) || '-'}</Text>
+                            <Text style={styles.statValue}>
+                                {deal.rating_value && deal.rating_value > 0 ? deal.rating_value.toFixed(1) : 'New'}
+                            </Text>
                         </View>
                         <View style={styles.stat}>
+                            <Ionicons name="people" size={16} color="#111" style={{ marginBottom: 4 }} />
                             <Text style={styles.statLabel}>Reviews</Text>
-                            <Text style={styles.statValue}>{deal.review_count || '-'}</Text>
+                            <Text style={styles.statValue}>{deal.review_count || '0'}</Text>
                         </View>
                         <View style={styles.stat}>
+                            <Ionicons name="time" size={16} color="#111" style={{ marginBottom: 4 }} />
                             <Text style={styles.statLabel}>Duration</Text>
-                            <Text style={styles.statValue}>{deal.duration_text || '-'}</Text>
+                            <Text style={styles.statValue}>{deal.duration_text || 'N/A'}</Text>
                         </View>
                     </View>
 
@@ -149,16 +211,19 @@ const styles = StyleSheet.create({
         padding: 16, // Add padding around card
     },
     // Main Detail Card
-    image: {
+    imageContainer: {
         width: '100%',
         height: 250,
         borderWidth: 2,
         borderColor: '#111',
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
-        // Card styling for image too? Actually lets put image inside card or above.
-        // Let's make the whole thing one big cardlook.
+        overflow: 'hidden',
         marginBottom: 0,
+    },
+    image: {
+        width: '100%',
+        height: '100%',
     },
     content: {
         padding: 20,

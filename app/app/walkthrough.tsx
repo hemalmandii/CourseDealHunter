@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../src/context/ThemeContext';
 import { AnimatedScaleButton } from '../src/components/AnimatedScaleButton';
+import { initializeOneSignal } from '../src/services/notifications';
 
 const { width, height } = Dimensions.get('window');
 
@@ -12,19 +13,25 @@ const SLIDES = [
         key: '1',
         title: 'Discover Deals',
         description: 'Find the best free and discounted courses from across the web. We hunt them so you don\'t have to.',
-        image: require('../src/assets/walkthrough/1.png'),
+        image: require('../assets/w1.webp'),
     },
     {
         key: '2',
-        title: 'Save Favorites',
-        description: 'Build your personal library. Heart the deals you love and access them anytime, anywhere.',
-        image: require('../src/assets/walkthrough/2.png'),
+        title: 'Track Favorites',
+        description: 'Save deals you like and get notified when similar ones pop up. Never miss a limited-time offer.',
+        image: require('../assets/w2.webp'),
     },
     {
         key: '3',
         title: 'Level Up',
-        description: 'Earn XP by finding deals and voting. Become the ultimate Deal Hunter and unlock badges.',
-        image: require('../src/assets/walkthrough/3.png'),
+        description: 'Learn new skills without breaking the bank. Your journey to mastery starts here.',
+        image: require('../assets/w3.webp'),
+    },
+    {
+        key: '4',
+        title: 'Stay Alert',
+        description: 'Enable notifications to catch limited-time free courses before they expire!',
+        image: require('../assets/icon.png'), // Using app icon as placeholder for notification slide
     },
 ];
 
@@ -78,7 +85,9 @@ export default function WalkthroughScreen() {
     }, []);
 
     const handleComplete = async () => {
-        await AsyncStorage.setItem('hasSeenWalkthrough', 'true');
+        // Initialize notifications AND PROMPT before finishing onboarding
+        initializeOneSignal(true);
+        await AsyncStorage.setItem('hasSeenWalkthrough_v2', 'true');
         router.replace('/(tabs)');
     };
 

@@ -6,6 +6,7 @@ import { CustomHeader } from '../../src/components/CustomHeader';
 import { AnimatedFadeInView } from '../../src/components/AnimatedFadeInView';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { getDeviceId } from '../../src/utils/storage';
 
 export default function FeedScreen() {
     const [deals, setDeals] = useState<any[]>([]);
@@ -21,10 +22,12 @@ export default function FeedScreen() {
         }
 
         const currentOffset = reset ? 0 : offset;
-        const limit = 20;
+        const limit = 10;
 
         try {
-            const newDeals = await fetchDeals(currentOffset, limit);
+            const deviceId = await getDeviceId();
+            console.log('[Feed] Fetching with deviceId:', deviceId);
+            const newDeals = await fetchDeals(currentOffset, limit, deviceId);
 
             if (reset) {
                 setDeals(newDeals);
@@ -34,11 +37,8 @@ export default function FeedScreen() {
                 setOffset(prev => prev + limit);
             }
 
-            if (newDeals.length < limit) {
-                setHasMore(false);
-            } else {
-                setHasMore(true);
-            }
+            // Hard Limit 10: Always set hasMore to false
+            setHasMore(false);
         } catch (e) {
             console.error(e);
         } finally {
@@ -91,13 +91,16 @@ export default function FeedScreen() {
                     keyExtractor={(item) => item.id}
                     renderItem={({ item, index }) => (
                         <AnimatedFadeInView index={index}>
-                            <CourseCard deal={item} />
+                            <CourseCard
+                                deal={item}
+                                initialIsSaved={item.is_saved}
+                            />
                         </AnimatedFadeInView>
                     )}
                     onRefresh={onRefresh}
                     refreshing={refreshing}
-                    onEndReached={onEndReached}
-                    onEndReachedThreshold={0.5}
+                    onEndReached={null}
+                    onEndReachedThreshold={null}
                     ListFooterComponent={renderFooter}
                     ListEmptyComponent={!loading ? <Text style={styles.empty}>No deals found</Text> : null}
                     contentContainerStyle={{ paddingTop: 16 }}

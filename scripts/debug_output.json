@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "count": 27,
+  "scheduled": 3,
+  "debug": [
+    "Processing 27 candidates. Top 3: Java Programming Language Step-by-Step Learning Path, Excellence in Business Strategy, Modelling & Planning, Mastering Generative AI: LLMs, Prompt Engineering & More!",
+    "SKIPPED: Already notified Java Programming Language Step-by-Step Learning Path",
+    "SKIPPED: Already notified Excellence in Business Strategy, Modelling & Planning",
+    "SKIPPED: Already notified Mastering Generative AI: LLMs, Prompt Engineering & More!",
+    "Attempting push for #0: Python Complete Course And Flask Framework, HTML Essentials (Time: IMMEDIATE)",
+    "SUCCESS: Push accepted for Python Complete Course And Flask Framework, HTML Essentials",
+    "Attempting push for #1: Learn Salesforce (Admin + Developer) with LWC Live Project (Time: 2026-02-05T13:31:10 GMT+0000)",
+    "SUCCESS: Push accepted for Learn Salesforce (Admin + Developer) with LWC Live Project",
+    "Attempting push for #2: JavaScript And PHP And Python Programming Complete Course (Time: 2026-02-05T15:31:11 GMT+0000)",
+    "SUCCESS: Push accepted for JavaScript And PHP And Python Programming Complete Course"
+  ],
+  "sources": {
+    "real.discount": 15,
+    "coursevania.com": 12,
+    "discudemy.com": 0
+  }
+}

@@ -57,3 +57,6 @@ logs
 
 # Test coverage
 coverage/
+
+# Firebase
+app/google-services.json

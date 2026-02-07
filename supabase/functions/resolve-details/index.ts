@@ -19,8 +19,8 @@ Deno.serve(async (req) => {
         // Using simple logic for MVP: just get nulls
         const { data: deals, error } = await supabase
             .from('deals')
-            .select('id, coursesity_detail_url')
-            .is('udemy_url', null)
+            .select('id, coursesity_detail_url, title, udemy_url')
+            .or('udemy_url.is.null,rating_value.is.null')
             .limit(10); // Batch size
 
         if (error) throw error;
@@ -57,6 +57,7 @@ Deno.serve(async (req) => {
                     }
 
                     udemyUrl = findUdemy(links);
+                    console.log(`Initial DOM check for ${deal.coursesity_detail_url}: ${udemyUrl ? 'Found' : 'Not Found'}`);
 
                     // Firecrawl augmentation if no link found and key exists
                     const firecrawlKey = Deno.env.get('FIRECRAWL_API_KEY');
@@ -78,6 +79,7 @@ Deno.serve(async (req) => {
 
                             if (fcRes.ok) {
                                 const fcData = await fcRes.json();
+                                console.log(`Firecrawl response for ${deal.id}:`, JSON.stringify(fcData).substring(0, 200));
                                 // Assuming extract might return it, or we just parse HTML from it if we asked for HTML
                                 // 'extract' feature is experimental/beta in Firecrawl, might fallback to HTML
                                 if (fcData.data?.extract?.udemy_link) { // Hypothetical
@@ -85,16 +87,67 @@ Deno.serve(async (req) => {
                                 } else if (fcData.data?.metadata?.sourceURL && fcData.data.metadata.sourceURL.includes('udemy.com')) {
                                     udemyUrl = fcData.data.metadata.sourceURL;
                                 }
+                            } else {
+                                console.error(`Firecrawl failed for ${deal.id}: ${fcRes.status}`);
                             }
                         } catch (e) { console.error('Firecrawl detail error', e); }
                     }
 
                     if (udemyUrl) {
+                        console.log(`✓ Resolved ${deal.id} -> ${udemyUrl}`);
+
+                        // Now enrich with Udemy metadata
+                        let metadata = {};
+                        if (firecrawlKey) {
+                            console.log(`Extracting Udemy metadata for: ${udemyUrl}`);
+                            try {
+                                const metaRes = await fetch('https://api.firecrawl.dev/v1/scrape', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${firecrawlKey}`
+                                    },
+                                    body: JSON.stringify({
+                                        url: udemyUrl,
+                                        formats: ['extract'],
+                                        extract: {
+                                            schema: {
+                                                type: "object",
+                                                properties: {
+                                                    rating: { type: "number" },
+                                                    reviews: { type: "integer" },
+                                                    duration: { type: "string" },
+                                                    thumbnail: { type: "string" }
+                                                }
+                                            }
+                                        }
+                                    })
+                                });
+
+                                if (metaRes.ok) {
+                                    const metaData = await metaRes.json();
+                                    const extracted = metaData.data?.extract || {};
+                                    metadata = {
+                                        rating_value: extracted.rating || null,
+                                        review_count: extracted.reviews || null,
+                                        duration_text: extracted.duration || null,
+                                        thumbnail_url: extracted.thumbnail || null
+                                    };
+                                    console.log('Extracted metadata:', JSON.stringify(metadata));
+                                }
+                            } catch (e) {
+                                console.error('Udemy metadata extraction error:', e);
+                            }
+                        }
+
                         updates.push({
                             id: deal.id,
                             udemy_url: udemyUrl,
+                            ...metadata,
                             last_crawled_at: new Date().toISOString()
                         });
+                    } else {
+                        console.log(`✗ Failed to resolve ${deal.id}`);
                     }
                 }
             } catch (e) {

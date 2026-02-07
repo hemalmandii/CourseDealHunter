@@ -2,7 +2,8 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
 import { CustomHeader } from '../../src/components/CustomHeader';
 import { CourseCard } from '../../src/components/CourseCard';
-import { searchDeals } from '../../src/services/api';
+import { searchDeals, fetchSavedDeals } from '../../src/services/api';
+import { getDeviceId } from '../../src/utils/storage';
 import { Ionicons } from '@expo/vector-icons';
 import { debounce } from 'lodash';
 
@@ -29,9 +30,25 @@ export default function ExploreScreen() {
         }
         setLoading(true);
         setSearched(true);
-        const data = await searchDeals(text);
-        setResults(data || []);
-        setLoading(false);
+        try {
+            const deviceId = await getDeviceId();
+            const [data, savedDeals] = await Promise.all([
+                searchDeals(text),
+                fetchSavedDeals(deviceId)
+            ]);
+
+            const savedIds = new Set(savedDeals.map((d: any) => d.id));
+            const enhanced = (data || []).map((d: any) => ({
+                ...d,
+                is_saved: savedIds.has(d.id)
+            }));
+
+            setResults(enhanced);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const debouncedSearch = useCallback(useDebounce(performSearch, 500), []);
@@ -87,7 +104,12 @@ export default function ExploreScreen() {
                 <FlatList
                     data={results}
                     keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => <CourseCard deal={item} />}
+                    renderItem={({ item }) => (
+                        <CourseCard
+                            deal={item}
+                            initialIsSaved={item.is_saved}
+                        />
+                    )}
                     contentContainerStyle={{ paddingBottom: 20 }}
                     ListEmptyComponent={
                         searched ? (

@@ -1,4 +1,9 @@
 import Constants from 'expo-constants';
+import { supabase } from '../utils/supabase'; // Ensure this path is correct based on your project structure
+
+console.log('DEBUG: Loaded supabase module:', supabase);
+if (!supabase) console.error('CRITICAL: Supabase client is UNDEFINED');
+if (supabase && !supabase.rpc) console.error('CRITICAL: Supabase RPC method missing');
 
 // For local dev with Supabase Edge Functions, it's usually http://localhost:54321/functions/v1
 // But on real device/emulator, localhost is different. 
@@ -13,24 +18,31 @@ const headers = {
     'apikey': SUPABASE_ANON_KEY,
 };
 
-export async function fetchDeals(offset = 0, limit = 20) {
+// Migrated to SQL RPC for reliability
+export async function fetchDeals(offset = 0, limit = 10, deviceId?: string) {
     try {
-        const t = new Date().getTime();
-        const response = await fetch(`${API_BASE_URL}/deals-feed?offset=${offset}&limit=${limit}&t=${t}`, {
-            headers
+        const { data, error } = await supabase.rpc('get_home_feed', {
+            p_limit: limit,
+            p_offset: offset,
+            p_device_id: deviceId
         });
-        if (!response.ok) throw new Error('Failed to fetch deals');
-        return await response.json();
+
+        if (error) throw error;
+        return data || [];
     } catch (e) {
-        console.error(e);
+        console.error('Fetch Deals RPC Error:', e);
         return [];
     }
 }
 
-export async function fetchDeal(id: string) {
+export async function fetchDeal(id: string, deviceId?: string) {
     try {
         const t = new Date().getTime();
-        const response = await fetch(`${API_BASE_URL}/deal-detail?id=${id}&t=${t}`, {
+        let url = `${API_BASE_URL}/deal-detail?id=${id}&t=${t}`;
+        if (deviceId) {
+            url += `&deviceId=${deviceId}`;
+        }
+        const response = await fetch(url, {
             headers
         });
         if (!response.ok) throw new Error('Failed to fetch deal');

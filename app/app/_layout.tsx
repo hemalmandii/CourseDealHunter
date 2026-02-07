@@ -7,9 +7,6 @@ import { View, ActivityIndicator } from 'react-native';
 import { initializeOneSignal, setOneSignalExternalUserId } from '../src/services/notifications';
 import { getDeviceId } from '../src/utils/storage';
 
-// Initialize OneSignal on app start - Temporarily disabled for build troubleshooting
-// initializeOneSignal();
-
 
 function RootLayoutNav() {
     const { isDark, colors } = useTheme();
@@ -18,13 +15,16 @@ function RootLayoutNav() {
 
     useEffect(() => {
         console.log('[Layout] Mounting RootLayoutNav');
+
+        // Initialize OneSignal safely within the lifecycle (Do NOT prompt yet)
+        initializeOneSignal(false);
         // Check onboarding status and set up OneSignal user ID
-        AsyncStorage.getItem('hasSeenWalkthrough').then(async (value) => {
+        AsyncStorage.getItem('hasSeenWalkthrough_v2').then(async (value) => {
             console.log('[Layout] AsyncStorage hasSeenWalkthrough:', value);
 
-            // Set up OneSignal external user ID for targeting - Temporarily disabled
+            // Set up OneSignal external user ID for targeting
             const deviceId = await getDeviceId();
-            // setOneSignalExternalUserId(deviceId);
+            setOneSignalExternalUserId(deviceId);
 
             if (value !== 'true') {
                 console.log('[Layout] Redirecting to /walkthrough');
@@ -39,6 +39,21 @@ function RootLayoutNav() {
             console.error('[Layout] AsyncStorage Error:', err);
             setIsReady(true);
         });
+
+        // Set up notification listener for deep linking
+        const { onNotificationOpened } = require('../src/services/notifications');
+        const unsubscribe = onNotificationOpened((notification: any) => {
+            console.log('[Notification] Opened:', notification);
+            const data = notification.additionalData;
+            if (data && data.dealId) {
+                console.log('[Notification] Deep linking to deal:', data.dealId);
+                router.push(`/deal/${data.dealId}`);
+            }
+        });
+
+        return () => {
+            if (typeof unsubscribe === 'function') unsubscribe();
+        };
     }, []);
 
     if (!isReady) {

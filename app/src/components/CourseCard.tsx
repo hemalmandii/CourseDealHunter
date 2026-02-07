@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Badge } from './Badge';
@@ -7,6 +7,19 @@ import { toggleSaveDeal } from '../services/api';
 import { getDeviceId } from '../utils/storage';
 import { useTheme } from '../context/ThemeContext';
 import { AnimatedScaleButton } from './AnimatedScaleButton';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const FALLBACK_IMAGES = [
+    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop', // Tech
+    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=800&auto=format&fit=crop', // Code
+    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800&auto=format&fit=crop', // Business
+    'https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=800&auto=format&fit=crop', // Design
+];
+
+const getFallbackImage = (title: string) => {
+    const hash = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return FALLBACK_IMAGES[hash % FALLBACK_IMAGES.length];
+};
 
 interface Deal {
     id: string;
@@ -16,6 +29,7 @@ interface Deal {
     review_count?: number;
     duration_text?: string;
     badge?: 'Verified Free' | 'Likely Expired' | 'Unverified';
+    is_saved?: boolean;
 }
 
 interface CourseCardProps {
@@ -28,6 +42,11 @@ export function CourseCard({ deal, initialIsSaved = false, onToggleSave }: Cours
     const router = useRouter();
     const { colors, isDark } = useTheme();
     const [isSaved, setIsSaved] = useState(initialIsSaved);
+
+    // Sync local state if initialIsSaved changes (e.g. after a refreshing the feed)
+    useEffect(() => {
+        setIsSaved(initialIsSaved);
+    }, [initialIsSaved]);
 
     const handleNavigation = () => {
         router.push(`/deal/${deal.id}`);
@@ -65,16 +84,35 @@ export function CourseCard({ deal, initialIsSaved = false, onToggleSave }: Cours
             >
                 <View style={[styles.thumbnailContainer, { borderBottomColor: colors.border }]}>
                     <Image
-                        source={{ uri: deal.thumbnail_url || 'https://via.placeholder.com/300' }}
+                        source={{ uri: deal.thumbnail_url?.includes('placeholder') ? getFallbackImage(deal.title) : (deal.thumbnail_url || getFallbackImage(deal.title)) }}
                         style={styles.thumbnailImage}
+                        defaultSource={{ uri: getFallbackImage(deal.title) }}
+                    />
+                    <LinearGradient
+                        colors={['transparent', 'rgba(0,0,0,0.4)']}
+                        style={StyleSheet.absoluteFill}
                     />
                 </View>
 
                 <View style={styles.content}>
                     <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>{deal.title}</Text>
                     <View style={styles.metaRow}>
-                        <Text style={[styles.rating, { color: colors.text, borderColor: colors.border }]}>★ {deal.rating_value?.toFixed(1) || '0.0'} ({deal.review_count || 0})</Text>
-                        {deal.duration_text && <Text style={[styles.duration, { color: colors.text, borderColor: colors.border }]}>{deal.duration_text}</Text>}
+                        <View style={[styles.ratingContainer, { backgroundColor: isDark ? '#374151' : '#FFF4CC', borderColor: colors.border }]}>
+                            <Text style={[styles.ratingText, { color: isDark ? '#FBBF24' : '#B45309' }]}>
+                                ★ {deal.rating_value && deal.rating_value > 0 ? deal.rating_value.toFixed(1) : 'New'}
+                            </Text>
+                            {deal.review_count !== undefined && deal.review_count > 0 && (
+                                <Text style={[styles.reviewText, { color: isDark ? '#9CA3AF' : '#92400E' }]}>
+                                    ({deal.review_count})
+                                </Text>
+                            )}
+                        </View>
+                        {deal.duration_text && (
+                            <View style={[styles.durationContainer, { backgroundColor: isDark ? '#1F2937' : '#E0F2FE', borderColor: colors.border }]}>
+                                <Ionicons name="time-outline" size={14} color={colors.text} style={{ marginRight: 4 }} />
+                                <Text style={[styles.durationText, { color: colors.text }]}>{deal.duration_text}</Text>
+                            </View>
+                        )}
                     </View>
                     <View style={{ marginTop: 12 }}>
                         <Badge type={deal.badge || 'Unverified'} />
@@ -159,24 +197,33 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         marginTop: 8,
     },
-    rating: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        backgroundColor: '#FFF4CC',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
-        borderWidth: 1,
-        overflow: 'hidden',
+    ratingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 10,
+        borderWidth: 1.5,
     },
-    duration: {
+    ratingText: {
+        fontSize: 14,
+        fontWeight: '900',
+    },
+    reviewText: {
         fontSize: 12,
         fontWeight: '600',
-        backgroundColor: '#E0F2FE',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
-        borderWidth: 1,
-        overflow: 'hidden',
+        marginLeft: 4,
+    },
+    durationContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 10,
+        borderWidth: 1.5,
+    },
+    durationText: {
+        fontSize: 12,
+        fontWeight: '700',
     },
 });

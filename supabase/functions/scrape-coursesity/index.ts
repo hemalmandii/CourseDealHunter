@@ -11,12 +11,17 @@ const SOURCES = [
   {
     name: 'real.discount',
     listingUrl: 'https://www.real.discount/udemy-coupon-code/',
-    coursePattern: /real\.discount\/offer\//,
+    coursePattern: /real\.discount\/(offer|([a-zA-Z0-9-]+-Free))\//,
   },
   {
     name: 'coursevania.com',
     listingUrl: 'https://coursevania.com/courses/',
     coursePattern: /coursevania\.com\/courses?\//,
+  },
+  {
+    name: 'discudemy.com',
+    listingUrl: 'https://www.discudemy.com/all',
+    coursePattern: /discudemy\.com\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+/,
   }
 ];
 
@@ -29,9 +34,13 @@ interface Deal {
   udemy_url: string;
   is_active: boolean;
   last_seen_at: string;
+  rating?: string;
+  review_count?: string;
+  duration?: string;
 }
 
 async function scrapeWithFirecrawl(url: string, firecrawlKey: string): Promise<{ html: string; links: string[] }> {
+  // ... (previous implementation remains same, just interface update context)
   const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
     method: 'POST',
     headers: {
@@ -51,8 +60,11 @@ async function scrapeWithFirecrawl(url: string, firecrawlKey: string): Promise<{
 
   const data = await response.json();
   if (!data.success) {
+    console.error(`Firecrawl unsuccessful for ${url}:`, data);
     throw new Error(`Firecrawl unsuccessful for ${url}`);
   }
+
+  console.log(`Firecrawl success for ${url}. HTML length: ${data.data?.html?.length || 0}, Links found: ${data.data?.links?.length || 0}`);
 
   return {
     html: data.data?.html || '',
@@ -60,9 +72,31 @@ async function scrapeWithFirecrawl(url: string, firecrawlKey: string): Promise<{
   };
 }
 
+// Helper to extract metadata from text
+function extractMetadata(html: string) {
+  const cleanHtml = html.replace(/<[^>]*>/g, ' '); // Strip tags
+
+  // Regex patterns
+  const ratingMatch = cleanHtml.match(/Rating:\s*(\d+(\.\d+)?)/i) ||
+    cleanHtml.match(/(\d+(\.\d+)?)\s*stars?/i) ||
+    cleanHtml.match(/(\d+(\.\d+)?)\s*\/\s*5/);
+
+  const reviewsMatch = cleanHtml.match(/(\d+(?:,\d+)*)\s*reviews?/i) ||
+    cleanHtml.match(/(\d+(?:,\d+)*)\s*students?/i); // Fallback to students if reviews missing
+
+  const durationMatch = cleanHtml.match(/(\d+(\.\d+)?)\s*hours?\s*video/i) ||
+    cleanHtml.match(/Duration:\s*(\d+(\.\d+)?)(\s*h\w*)?/i);
+
+  return {
+    rating: ratingMatch ? ratingMatch[1] : undefined,
+    review_count: reviewsMatch ? reviewsMatch[1] : undefined,
+    duration: durationMatch ? `${durationMatch[1]}h` : undefined
+  };
+}
+
 async function extractDealsFromRealDiscount(
   firecrawlKey: string,
-  maxDeals: number = 10
+  maxDeals: number = 50
 ): Promise<Deal[]> {
   const deals: Deal[] = [];
   const source = SOURCES[0];
@@ -79,7 +113,7 @@ async function extractDealsFromRealDiscount(
     for (const link of links) {
       if (typeof link === 'string' &&
         link.includes('real.discount') &&
-        (link.includes('/offer/') || link.includes('/?couponCode='))) {
+        (link.includes('/offer/') || link.includes('-Free/') || link.includes('/?couponCode='))) {
         if (!courseUrls.includes(link)) {
           courseUrls.push(link);
         }
@@ -115,7 +149,7 @@ async function extractDealsFromRealDiscount(
 
     console.log(`Found ${courseUrls.length} course URLs from ${source.name}`);
 
-    // Process detail pages to get Udemy URLs
+    // Process detail pages to get Udemy URLs AND Metadata
     const urlsToProcess = courseUrls.slice(0, maxDeals);
 
     for (const courseUrl of urlsToProcess) {
@@ -157,6 +191,9 @@ async function extractDealsFromRealDiscount(
           }
         }
 
+        // Extract metadata from the detail page HTML
+        const metadata = extractMetadata(detail.html);
+
         if (udemyUrl && title) {
           deals.push({
             source: source.name,
@@ -166,9 +203,12 @@ async function extractDealsFromRealDiscount(
             thumbnail_url: thumbnail || 'https://via.placeholder.com/480x270/1e293b/f1f5f9?text=Free+Course',
             udemy_url: udemyUrl,
             is_active: true,
-            last_seen_at: new Date().toISOString()
+            last_seen_at: new Date().toISOString(),
+            rating: metadata.rating,
+            review_count: metadata.review_count,
+            duration: metadata.duration
           });
-          console.log(`✓ ${title.substring(0, 50)}...`);
+          console.log(`✓ ${title.substring(0, 50)}... [${metadata.rating || 'No Rating'}]`);
         }
 
         // Rate limiting
@@ -181,6 +221,8 @@ async function extractDealsFromRealDiscount(
       if (deals.length >= maxDeals) break;
     }
 
+
+
   } catch (e) {
     console.error(`Error scraping ${source.name}:`, e);
   }
@@ -190,7 +232,7 @@ async function extractDealsFromRealDiscount(
 
 async function extractDealsFromCoursevania(
   firecrawlKey: string,
-  maxDeals: number = 10
+  maxDeals: number = 50
 ): Promise<Deal[]> {
   const deals: Deal[] = [];
   const source = SOURCES[1];
@@ -308,6 +350,87 @@ async function extractDealsFromCoursevania(
   return deals;
 }
 
+async function extractDealsFromDiscUdemy(
+  firecrawlKey: string,
+  maxDeals: number = 50
+): Promise<Deal[]> {
+  const deals: Deal[] = [];
+  const source = SOURCES[2];
+
+  console.log(`Scraping ${source.name}...`);
+
+  try {
+    const { html, links } = await scrapeWithFirecrawl(source.listingUrl, firecrawlKey);
+
+    const courseUrls: string[] = [];
+    for (const link of links) {
+      if (typeof link === 'string' &&
+        link.includes('discudemy.com/') &&
+        !link.includes('/all') &&
+        !link.includes('/category/') &&
+        !link.includes('/language/')) {
+        if (!courseUrls.includes(link)) {
+          courseUrls.push(link);
+        }
+      }
+    }
+
+    console.log(`Found ${courseUrls.length} course URLs from ${source.name}`);
+
+    for (const courseUrl of courseUrls.slice(0, maxDeals)) {
+      try {
+        console.log(`Fetching: ${courseUrl}`);
+        const detail = await scrapeWithFirecrawl(courseUrl, firecrawlKey);
+
+        // DiscUdemy often has an intermediate page. We need to find the "Go to Course" link
+        let nextUrl = '';
+        for (const link of detail.links) {
+          if (typeof link === 'string' && link.includes('/go/')) {
+            nextUrl = link;
+            break;
+          }
+        }
+
+        if (nextUrl) {
+          const goDetail = await scrapeWithFirecrawl(nextUrl, firecrawlKey);
+          let udemyUrl = '';
+          for (const link of goDetail.links) {
+            if (typeof link === 'string' && link.includes('udemy.com/course/')) {
+              udemyUrl = link;
+              break;
+            }
+          }
+
+          if (udemyUrl) {
+            const doc = new DOMParser().parseFromString(detail.html, 'text/html');
+            const title = doc?.querySelector('h1')?.textContent?.trim() || 'Free Course';
+            const img = doc?.querySelector('.ui.image.rounded')?.getAttribute('src') || '';
+
+            deals.push({
+              source: source.name,
+              coursesity_list_url: source.listingUrl,
+              coursesity_detail_url: courseUrl,
+              title: title.substring(0, 200),
+              thumbnail_url: img || 'https://via.placeholder.com/480x270/1e293b/f1f5f9?text=Free+Course',
+              udemy_url: udemyUrl,
+              is_active: true,
+              last_seen_at: new Date().toISOString()
+            });
+            console.log(`✓ ${title.substring(0, 50)}...`);
+          }
+        }
+      } catch (e) {
+        console.error(`Error processing ${courseUrl}:`, e);
+      }
+      if (deals.length >= maxDeals) break;
+    }
+  } catch (e) {
+    console.error(`Error scraping ${source.name}:`, e);
+  }
+
+  return deals;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -326,13 +449,18 @@ Deno.serve(async (req) => {
 
     console.log('Starting multi-source scrape...');
 
-    // Scrape from both sources
-    const [realDiscountDeals, coursevaniaDeals] = await Promise.all([
-      extractDealsFromRealDiscount(firecrawlKey, 10),
-      extractDealsFromCoursevania(firecrawlKey, 10)
+    // Initialize output info
+    const debugLogs: string[] = [];
+    let scheduledCount = 0;
+
+    // Scrape from all sources
+    const [realDiscountDeals, coursevaniaDeals, discudemyDeals] = await Promise.all([
+      extractDealsFromRealDiscount(firecrawlKey, 15),
+      extractDealsFromCoursevania(firecrawlKey, 15),
+      extractDealsFromDiscUdemy(firecrawlKey, 15)
     ]);
 
-    const allDeals = [...realDiscountDeals, ...coursevaniaDeals];
+    const allDeals = [...realDiscountDeals, ...coursevaniaDeals, ...discudemyDeals];
     console.log(`Total deals before dedup: ${allDeals.length}`);
 
     // Deduplicate by udemy_url (normalize URLs first)
@@ -361,35 +489,126 @@ Deno.serve(async (req) => {
         .from('deals')
         .upsert(uniqueDeals, {
           onConflict: 'udemy_url',
-          ignoreDuplicates: false
-        });
+          ignoreDuplicates: false,
+        })
 
       if (error) {
-        // Fallback to individual inserts if bulk fails
-        console.log('Bulk upsert failed, trying individual inserts...');
-        let successCount = 0;
+        console.error('Bulk upsert error:', error);
+        // Fallback or retry logic...
+      } else {
+        console.log(`Successfully upserted ${uniqueDeals.length} deals.`);
 
-        for (const deal of uniqueDeals) {
-          const { error: insertError } = await supabase
-            .from('deals')
-            .upsert(deal, {
-              onConflict: 'coursesity_detail_url',
-              ignoreDuplicates: false
-            });
+        // --- AUTOMATED NOTIFICATION LOGIC ---
+        // Strategy: Max 1 notification per run. Must be Quality (>4.5 stars or >1k reviews).
 
-          if (!insertError) successCount++;
+        // 1. Filter candidates
+        // 1. Filter candidates (BEST AVAILABLE STRATEGY)
+        // We removed the hard quality threshold to guarantee notifications.
+        // We will just sort them and pick the best ones available.
+        const candidates = [...uniqueDeals];
+
+        // 2. Sort by "Score" (Rating > Reviews)
+        candidates.sort((a, b) => {
+          const rA = parseFloat(a.rating || '0');
+          const rB = parseFloat(b.rating || '0');
+          if (rA !== rB) return rB - rA; // Descending rating
+
+          const revA = parseInt((a.review_count || '0').replace(/,/g, ''), 10);
+          const revB = parseInt((b.review_count || '0').replace(/,/g, ''), 10);
+          return revB - revA; // Descending reviews
+        });
+
+        console.log(`Notification candidates: ${candidates.length} (out of ${uniqueDeals.length})`);
+
+        // 3. Notify for Top 3 Best Candidates (Drip Feed: T+0, T+2h, T+4h)
+
+        if (candidates.length > 0) {
+          debugLogs.push(`Processing ${candidates.length} candidates. Top 3: ${candidates.slice(0, 3).map(c => c.title).join(', ')}`);
+          console.log(`Processing ${candidates.length} candidates for potential notification...`);
+
+          const PUSH_SERVICE_URL = `${Deno.env.get('SUPABASE_URL')}/functions/v1/send-push`;
+          const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+          // Loop through candidates
+          for (const bestDeal of candidates) {
+            if (scheduledCount >= 3) break;
+
+            try {
+              // Check if already notified updated recently (skip if < 24h)
+              const { data: existing } = await supabase
+                .from('deals')
+                .select('id, last_notified_at')
+                .eq('udemy_url', bestDeal.udemy_url)
+                .maybeSingle();
+
+              const shouldNotify = !existing?.last_notified_at ||
+                (new Date().getTime() - new Date(existing.last_notified_at).getTime()) > 86400000; // 24h
+
+              if (shouldNotify) {
+                // Calculate Schedule Time
+                // scheduledCount=0 -> Now (undefined) 
+                // scheduledCount=1 -> Now + 2 hours
+                // scheduledCount=2 -> Now + 4 hours
+                let sendAfter = undefined;
+                if (scheduledCount > 0) {
+                  const date = new Date();
+                  date.setHours(date.getHours() + (scheduledCount * 2));
+                  // Use fixed UTC string format to be safe (no T)
+                  sendAfter = date.toISOString().replace('T', ' ').replace(/\.[0-9]{3}Z$/, ' GMT+0000');
+                }
+
+                debugLogs.push(`Attempting push for #${scheduledCount}: ${bestDeal.title} (Time: ${sendAfter || 'IMMEDIATE'})`);
+                console.log(`Triggering push for Candidate #${scheduledCount + 1}: ${bestDeal.title} (Schedule: ${sendAfter || 'Now'})`);
+
+                const pushRes = await fetch(PUSH_SERVICE_URL, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${SERVICE_ROLE_KEY}`
+                  },
+                  body: JSON.stringify({
+                    deal_id: existing?.id || 'new',
+                    title: '🔥 Free Course Alert!',
+                    message: `${bestDeal.rating ? '⭐ ' + bestDeal.rating + ' ' : ''}${bestDeal.title}`,
+                    image_url: bestDeal.thumbnail_url,
+                    send_after: sendAfter
+                  })
+                });
+
+                if (pushRes.ok) {
+                  debugLogs.push(`SUCCESS: Push accepted for ${bestDeal.title}`);
+                  if (existing?.id) {
+                    await supabase.from('deals').update({ last_notified_at: new Date().toISOString() }).eq('id', existing.id);
+                    scheduledCount++;
+                  }
+                } else {
+                  const errText = await pushRes.text();
+                  debugLogs.push(`ERROR: OneSignal rejected ${bestDeal.title}: ${errText}`);
+                  console.error('Push Service Error:', errText);
+                }
+              } else {
+                debugLogs.push(`SKIPPED: Already notified ${bestDeal.title}`);
+              }
+            } catch (e) {
+              const err = e instanceof Error ? e.message : String(e);
+              debugLogs.push(`EXCEPTION: ${bestDeal.title} - ${err}`);
+              console.error(`Notification failed for ${bestDeal.title}:`, e);
+            }
+          }
+          console.log(`Scheduled ${scheduledCount} notifications total.`);
         }
-
-        console.log(`Inserted ${successCount}/${uniqueDeals.length} deals`);
       }
     }
 
     return new Response(JSON.stringify({
       success: true,
       count: uniqueDeals.length,
+      scheduled: scheduledCount,
+      debug: debugLogs,
       sources: {
         'real.discount': realDiscountDeals.length,
-        'coursevania.com': coursevaniaDeals.length
+        'coursevania.com': coursevaniaDeals.length,
+        'discudemy.com': discudemyDeals.length
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

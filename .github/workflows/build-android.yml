@@ -1,0 +1,58 @@
+name: Build Android App Bundle
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/**'
+      - '.github/workflows/build-android.yml'
+
+jobs:
+  build:
+    name: EAS Build (Android)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🏗 Setup Repo
+        uses: actions/checkout@v3
+
+      - name: 🏗 Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+
+      - name: 🏗 Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 🏗 Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: 📦 Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: 📦 Install Dependencies
+        working-directory: ./app
+        run: npm ci
+
+      - name: 🚀 Build AAB
+        working-directory: ./app
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          GOOGLE_SERVICES_BASE64: ${{ secrets.GOOGLE_SERVICES_BASE64 }}
+          EAS_LOCAL_BUILD_SKIP_CLEANUP: "1"
+        run: |
+          chmod +x scripts/restore-json.sh
+          eas build --platform android --profile production --local --non-interactive --output build.aab
+
+      - name: 📤 Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-release.aab
+          path: app/build.aab

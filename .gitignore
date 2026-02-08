@@ -59,4 +59,3 @@ logs
 coverage/
 
 # Firebase
-app/google-services.json

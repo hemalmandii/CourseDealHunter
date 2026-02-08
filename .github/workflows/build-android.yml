@@ -41,15 +41,20 @@ jobs:
         working-directory: ./app
         run: npm ci
 
+      - name: 🔓 Restore Secrets
+        working-directory: ./app
+        env:
+          GOOGLE_SERVICES_BASE64: ${{ secrets.GOOGLE_SERVICES_BASE64 }}
+        run: |
+          chmod +x scripts/restore-json.sh
+          ./scripts/restore-json.sh
+
       - name: 🚀 Build AAB
         working-directory: ./app
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          GOOGLE_SERVICES_BASE64: ${{ secrets.GOOGLE_SERVICES_BASE64 }}
           EAS_LOCAL_BUILD_SKIP_CLEANUP: "1"
-        run: |
-          chmod +x scripts/restore-json.sh
-          eas build --platform android --profile production --local --non-interactive --output build.aab
+        run: eas build --platform android --profile production --local --non-interactive --output build.aab
 
       - name: 📤 Upload Artifact
         uses: actions/upload-artifact@v4

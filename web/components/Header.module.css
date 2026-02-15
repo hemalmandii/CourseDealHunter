@@ -1,0 +1,148 @@
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--color-surface);
+    border-bottom: 2px solid var(--color-border);
+    box-shadow: 0 2px 0 var(--color-shadow);
+}
+
+.inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.logoIcon {
+    font-size: 24px;
+}
+
+.logoText {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--color-text);
+    letter-spacing: -0.5px;
+}
+
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.navLink {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    text-decoration: none;
+}
+
+.navLink:hover {
+    color: var(--color-text);
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.navLinkActive {
+    color: var(--color-text);
+    background: var(--color-accent);
+    border: 1.5px solid var(--color-border);
+}
+
+.ctaBtn {
+    flex-shrink: 0;
+}
+
+.menuBtn {
+    display: none;
+    padding: 8px;
+    color: var(--color-text);
+}
+
+/* Mobile Menu */
+.mobileMenu {
+    display: none;
+    flex-direction: column;
+    padding: 16px 20px 24px;
+    gap: 4px;
+    border-top: 2px solid var(--color-border);
+    background: var(--color-surface);
+    animation: slideDown 200ms ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mobileNavLink {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.mobileNavLink:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.mobileNavLinkActive {
+    color: var(--color-text);
+    background: var(--color-accent);
+    border: 1.5px solid var(--color-border);
+}
+
+.mobileCta {
+    margin-top: 12px;
+    width: 100%;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .nav {
+        display: none;
+    }
+
+    .ctaBtn {
+        display: none;
+    }
+
+    .menuBtn {
+        display: flex;
+    }
+
+    .mobileMenu {
+        display: flex;
+    }
+}

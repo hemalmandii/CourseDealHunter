@@ -59,3 +59,11 @@ logs
 coverage/
 
 # Firebase
+google-services.json
+app/google-services.json
+
+# Next.js
+.next/
+out/
+.vercel
+

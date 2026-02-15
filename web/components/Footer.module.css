@@ -1,0 +1,102 @@
+.footer {
+    background: var(--color-text);
+    color: white;
+    margin-top: 80px;
+    border-top: 2px solid var(--color-border);
+}
+
+.inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px 20px 24px;
+}
+
+.top {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 40px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.brand {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logoIcon {
+    font-size: 24px;
+}
+
+.logoText {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+}
+
+.tagline {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+    max-width: 360px;
+}
+
+.links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.linksTitle {
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--color-accent);
+    margin-bottom: 4px;
+}
+
+.links a {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.7);
+    transition: color var(--transition-fast);
+}
+
+.links a:hover {
+    color: white;
+}
+
+.storeLink {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 24px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 768px) {
+    .top {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+
+    .bottom {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+}

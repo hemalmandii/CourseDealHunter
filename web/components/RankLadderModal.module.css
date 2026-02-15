@@ -1,0 +1,96 @@
+.closeBtn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 4px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: color var(--transition-fast);
+}
+
+.closeBtn:hover {
+    color: var(--color-text);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.title {
+    font-size: 22px;
+    font-weight: 900;
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.ladder {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rankItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    border: 2px solid transparent;
+    transition: all var(--transition-fast);
+}
+
+.rankAchieved {
+    background: #F0FDF4;
+    border-color: #86EFAC;
+}
+
+.rankLocked {
+    background: #F9FAFB;
+    opacity: 0.6;
+}
+
+.rankCurrent {
+    background: var(--color-accent) !important;
+    border-color: var(--color-border) !important;
+    box-shadow: var(--shadow-brutal-sm);
+    opacity: 1 !important;
+}
+
+.rankEmoji {
+    font-size: 28px;
+}
+
+.rankInfo {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.rankTitle {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--color-text);
+}
+
+.rankXP {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.currentBadge {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 900;
+    background: var(--color-text);
+    color: var(--color-accent);
+    border-radius: var(--radius-pill);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}

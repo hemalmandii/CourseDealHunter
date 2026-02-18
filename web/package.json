@@ -16,6 +16,9 @@
     "react-dom": "19.2.3",
     "uuid": "^13.0.0"
   },
+  "engines": {
+    "node": ">=18.18.0"
+  },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",

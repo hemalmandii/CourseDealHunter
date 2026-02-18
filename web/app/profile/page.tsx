@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import { getUserStats } from '@/lib/api';
 import { getDeviceId } from '@/lib/device';

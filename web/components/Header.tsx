@@ -39,7 +39,7 @@ export function Header() {
                 </nav>
 
                 <a
-                    href="https://play.google.com/store/apps/details?id=com.hemalmandal.dealfinder"
+                    href="https://play.google.com/store/apps/details?id=com.coursedealhunter.app"
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`btn btn-primary btn-sm ${styles.ctaBtn}`}
@@ -71,7 +71,7 @@ export function Header() {
                         </Link>
                     ))}
                     <a
-                        href="https://play.google.com/store/apps/details?id=com.hemalmandal.dealfinder"
+                        href="https://play.google.com/store/apps/details?id=com.coursedealhunter.app"
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`btn btn-primary ${styles.mobileCta}`}

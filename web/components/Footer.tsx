@@ -28,7 +28,7 @@ export function Footer() {
                     <div className={styles.links}>
                         <h4 className={styles.linksTitle}>Get the App</h4>
                         <a
-                            href="https://play.google.com/store/apps/details?id=com.hemalmandal.dealfinder"
+                            href="https://play.google.com/store/apps/details?id=com.coursedealhunter.app"
                             target="_blank"
                             rel="noopener noreferrer"
                             className={styles.storeLink}

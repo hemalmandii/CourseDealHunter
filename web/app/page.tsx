@@ -44,7 +44,7 @@ export default function HomePage() {
               Browse Courses
             </Link>
             <a
-              href="https://play.google.com/store/apps/details?id=com.hemalmandal.dealfinder"
+              href="https://play.google.com/store/apps/details?id=com.coursedealhunter.app"
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-accent btn-lg"
@@ -153,7 +153,7 @@ export default function HomePage() {
               <h2>Get SkillLoot on Android</h2>
               <p>Get push notifications for the hottest new free courses the moment they drop.</p>
               <a
-                href="https://play.google.com/store/apps/details?id=com.hemalmandal.dealfinder"
+                href="https://play.google.com/store/apps/details?id=com.coursedealhunter.app"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary btn-lg"
